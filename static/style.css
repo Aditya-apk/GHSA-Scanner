@@ -1,0 +1,426 @@
+/* Variables */
+:root {
+    --primary-color: #1a237e;
+    --secondary-color: #304ffe;
+    --background-color: #f5f6fa;
+    --text-color: #2c3e50;
+    --border-color: #e1e4e8;
+    --hover-color: #3d5afe;
+    --card-background: #ffffff;
+    --shadow-color: rgba(0, 0, 0, 0.1);
+}
+
+/* Base Styles */
+body {
+    font-family: 'Segoe UI', -apple-system, BlinkMacSystemFont, sans-serif;
+    background-color: var(--background-color);
+    color: var(--text-color);
+    margin: 0;
+    padding: 0;
+    line-height: 1.6;
+    min-height: 100vh;
+}
+
+.container {
+    max-width: 1200px;
+    margin: 0 auto;
+    padding: 2rem;
+}
+
+/* Header Styles */
+.header {
+    background: linear-gradient(135deg, var(--primary-color), var(--secondary-color));
+    color: white;
+    padding: 2rem 0;
+    margin: -2rem -2rem 2rem -2rem;
+    text-align: center;
+    box-shadow: 0 4px 6px var(--shadow-color);
+}
+
+.header h1 {
+    color: white;
+    margin-bottom: 1.5rem;
+    font-size: 2.5rem;
+    text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.2);
+}
+
+/* Search Container */
+.search-container {
+    display: flex;
+    justify-content: center;
+    gap: 1rem;
+    margin: 2rem 0;
+    padding: 0 1rem;
+}
+
+/* Standardize input and select sizes */
+.search-container input[type="text"],
+.commit-search input[type="text"],
+.global-search-input,
+.select2-container .select2-selection--single,
+.custom-select {
+    width: 100%;
+    height: 45px;
+    padding: 0.75rem 1rem;
+    border: 2px solid var(--border-color);
+    border-radius: 8px;
+    font-size: 1rem;
+    margin-bottom: 1rem;
+}
+
+/* Version controls layout */
+.version-controls {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 1.5rem;
+    margin-bottom: 2rem;
+}
+
+.select-wrapper {
+    width: 100%;
+}
+
+/* Search sections spacing and alignment */
+.global-search-container,
+.commit-search {
+    margin: 1.5rem 0;
+    padding: 1rem;
+    background: rgba(48, 79, 254, 0.05);
+    border-radius: 8px;
+    border: 1px solid var(--border-color);
+}
+
+/* Consistent headings */
+.version-panel h3,
+.global-search-container h3 {
+    margin-bottom: 1rem;
+    font-size: 1.1rem;
+    color: var(--text-color);
+}
+
+/* Select2 customization for consistency */
+.select2-container {
+    width: 100% !important;
+}
+
+.select2-container .select2-selection--single {
+    height: 45px !important;
+    line-height: 45px !important;
+}
+
+.select2-container--default .select2-selection--single .select2-selection__rendered {
+    line-height: 45px !important;
+}
+
+.select2-container--default .select2-selection--single .select2-selection__arrow {
+    height: 43px !important;
+}
+
+/* Search button alignment */
+.search-btn {
+    min-width: 120px;
+    height: 45px;
+}
+
+input[type="text"]:focus {
+    outline: none;
+    border-color: var(--secondary-color);
+    box-shadow: 0 0 0 3px rgba(48, 79, 254, 0.2);
+}
+
+/* Button Styles */
+button {
+    padding: 1rem 2rem;
+    background-color: var(--secondary-color);
+    color: white;
+    border: none;
+    border-radius: 8px;
+    cursor: pointer;
+    font-size: 1rem;
+    font-weight: 600;
+    transition: all 0.3s ease;
+    box-shadow: 0 2px 4px var(--shadow-color);
+}
+
+button:hover {
+    background-color: var(--hover-color);
+    transform: translateY(-1px);
+    box-shadow: 0 4px 8px var(--shadow-color);
+}
+
+/* Security Animation */
+/* Loading Progress */
+.security-animation {
+    position: relative;
+    width: 100%;
+    max-width: 800px;
+    margin: 3rem auto;
+    display: none;
+    text-align: center;
+}
+
+.progress-container {
+    width: 100%;
+    height: 4px;
+    background: rgba(48, 79, 254, 0.1);
+    border-radius: 4px;
+    overflow: hidden;
+    box-shadow: 0 1px 3px var(--shadow-color);
+    margin: 1rem 0;
+}
+
+.progress-bar {
+    width: 0;
+    height: 100%;
+    background: linear-gradient(90deg, var(--secondary-color), var(--hover-color));
+    animation: progress 2.5s ease-in-out infinite;
+    border-radius: 4px;
+    position: relative;
+}
+
+.progress-bar::after {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background: linear-gradient(
+        90deg,
+        transparent,
+        rgba(255, 255, 255, 0.3),
+        transparent
+    );
+    animation: shimmer 1.5s infinite;
+}
+
+@keyframes shimmer {
+    0% { transform: translateX(-100%); }
+    100% { transform: translateX(100%); }
+}
+
+@keyframes progress {
+    0% { width: 0; }
+    50% { width: 70%; }
+    100% { width: 100%; }
+}
+
+/* Remove the old scanning text */
+.scan-text {
+    display: none;
+}
+
+/* Remove old animation styles */
+.scan-container,
+.radar-spinner,
+.scan-lines,
+.pulse-rings,
+.pulse-rings::before,
+.pulse-rings::after {
+    display: none;
+}
+
+@keyframes progress {
+    0% { width: 0; }
+    100% { width: 100%; }
+}
+
+/* Results Section */
+.result-section {
+    background: var(--card-background);
+    border-radius: 12px;
+    padding: 2rem;
+    margin-bottom: 2rem;
+    box-shadow: 0 4px 6px var(--shadow-color);
+    transition: transform 0.3s ease;
+}
+
+.result-section:hover {
+    transform: translateY(-2px);
+}
+
+/* Grid Layout */
+.analysis-grid {
+    display: grid;
+    grid-template-columns: 2fr 1fr;
+    gap: 2rem;
+    margin-top: 2rem;
+}
+
+/* Version Panel Styling */
+.version-panel {
+    background: var(--card-background);
+    border-radius: 12px;
+    padding: 2rem;
+    box-shadow: 0 4px 6px var(--shadow-color);
+}
+
+/* Commits Panel Adjustments */
+.commits-panel {
+    background: var(--card-background);
+    border-radius: 12px;
+    padding: 2rem;
+    box-shadow: 0 4px 6px var(--shadow-color);
+    max-height: 600px;
+    overflow-y: auto;
+}
+
+/* Search Container Adjustments */
+.version-controls,
+.global-search-container,
+.commit-search {
+    margin: 1rem 0;
+    width: 100%;
+    max-width: calc(100% - 2rem);
+}
+
+/* Input and Select Sizing */
+.search-container input[type="text"],
+.commit-search input[type="text"],
+.global-search-input,
+.select2-container .select2-selection--single,
+.custom-select {
+    width: 100%;
+    max-width: 100%;
+    box-sizing: border-box;
+}
+
+/* Select Wrapper Adjustments */
+.select-wrapper {
+    margin-bottom: 1rem;
+    width: 100%;
+}
+
+/* Search Results Container */
+.search-results {
+    margin-top: 1rem;
+    max-height: 400px;
+    overflow-y: auto;
+    border-top: 1px solid var(--border-color);
+    padding-top: 1rem;
+}
+
+.search-result-item {
+    padding: 1rem;
+    border-bottom: 1px solid var(--border-color);
+    transition: background-color 0.3s ease;
+}
+
+.search-result-item:hover {
+    background-color: rgba(48, 79, 254, 0.05);
+}
+
+/* CVSS Styles */
+.cvss-container {
+    display: flex;
+    gap: 1rem;
+    align-items: center;
+}
+
+.cvss4-details {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    background: rgba(0, 0, 0, 0.05);
+    padding: 0.3rem 0.8rem;
+    border-radius: 4px;
+    position: relative;
+}
+
+.cvss4-label {
+    font-weight: 500;
+    color: var(--text-color);
+}
+
+.cvss4-value {
+    font-weight: 600;
+    padding: 0.2rem 0.5rem;
+    border-radius: 3px;
+}
+
+.cvss-value.critical {
+    background-color: #dc3545;
+    color: white;
+}
+
+.cvss-value.medium {
+    background-color: #ffc107;
+    color: #000;
+}
+
+.cvss-value.low {
+    background-color: #28a745;
+    color: white;
+}
+
+/* Animations */
+@keyframes radar-spin {
+    to { transform: translate(-50%, -50%) rotate(360deg); }
+}
+
+@keyframes pulse {
+    0% {
+        transform: scale(0);
+        opacity: 1;
+    }
+    100% {
+        transform: scale(3);
+        opacity: 0;
+    }
+}
+
+@keyframes progress {
+    0% { width: 0; }
+    100% { width: 100%; }
+}
+
+/* Select2 Customization */
+.select2-container {
+    width: 100% !important;
+}
+
+.select2-container .select2-selection--single {
+    height: 45px !important;
+    padding: 8px !important;
+    border: 2px solid var(--border-color);
+    border-radius: 8px;
+}
+
+.select2-container--default .select2-selection--single .select2-selection__rendered {
+    line-height: 45px !important;
+    text-align: center;
+    color: var(--text-color);
+}
+
+.select2-container--default .select2-results__option {
+    text-align: center;
+    padding: 8px 12px !important;
+}
+
+.select2-container--default .select2-results__option--highlighted[aria-selected] {
+    background-color: var(--secondary-color);
+}
+
+/* Footer */
+.footer {
+    text-align: center;
+    padding: 2rem 0;
+    color: var(--text-color);
+    font-size: 0.9rem;
+}
+.global-search-container {
+    margin: 2rem 0;
+    padding: 1rem;
+    background: rgba(48, 79, 254, 0.05);
+    border-radius: 8px;
+    border: 1px solid var(--border-color);
+}
+
+.global-search-container h3 {
+    margin-bottom: 1rem;
+    color: var(--secondary-color);
+}
+
+.global-search-input {
+    width: 100%;
+}

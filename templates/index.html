@@ -1,0 +1,367 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>GitHub Advisory Scanner</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+    <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+    <!-- Add these lines after jQuery -->
+    <link href="https://cdn.jsdelivr.net/npm/select2@4.1.0-rc.0/dist/css/select2.min.css" rel="stylesheet" />
+    <script src="https://cdn.jsdelivr.net/npm/select2@4.1.0-rc.0/dist/js/select2.min.js"></script>
+    <!-- Add this line -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.4/css/all.min.css">
+</head>
+<body>
+    <div class="container dark-theme">
+        <div class="header">
+            <h1><i class="fas fa-shield-alt"></i> GitHub Advisory Scanner</h1>
+            <div class="search-container">
+                <input type="text" 
+                       id="cve-input" 
+                       placeholder="Enter CVE ID (e.g., CVE-2021-44228)"
+                       onkeypress="if(event.key === 'Enter') searchCVE()">
+                <button onclick="searchCVE()" class="search-btn">
+                    <i class="fas fa-search"></i> Scan
+                </button>
+            </div>
+        </div>
+
+        <!-- Loading Progress -->
+        <div id="security-animation" class="security-animation">
+            <div class="progress-container">
+                <div class="progress-bar"></div>
+            </div>
+        </div>
+
+        <!-- Results Container -->
+        <div id="results" class="results-container">
+            <!-- Package Info -->
+            <div class="info-card">
+                <h2><i class="fas fa-box"></i> Package Information</h2>
+                <p id="package-name" class="highlight-text"></p>
+                <div class="vulnerability-info">
+                    <h3>Summary</h3>
+                    <p id="vulnerability-summary"></p>
+                    <h3>Description</h3>
+                    <div id="vulnerability-description"></div>
+                </div>
+            </div>
+
+            <!-- Version Analysis -->
+            <div class="analysis-grid">
+                <!-- Left panel for search and results -->
+                <div class="version-panel">
+                    <h2><i class="fas fa-code-branch"></i> Version Analysis</h2>
+                    <div class="version-controls">
+                        <div class="select-wrapper">
+                            <h3>Releases</h3>
+                            <select id="releases" class="custom-select" data-placeholder="Select a release version..."></select>
+                        </div>
+                        <div class="select-wrapper">
+                            <h3>Tags</h3>
+                            <select id="tags" class="custom-select" data-placeholder="Select a tag..."></select>
+                        </div>
+                    </div>
+                    
+                    <!-- Update the commit search section -->
+                    <div class="commit-search">
+                        <div class="search-input-wrapper">
+                            <input type="text" 
+                                   id="commit-search" 
+                                   placeholder="Search commits in selected version..."
+                                   disabled>
+                            <button id="clear-search" class="clear-btn" style="display: none;">
+                                <i class="fas fa-times"></i>
+                            </button>
+                        </div>
+                    </div>
+                    <div id="search-results-container" class="search-results">
+                        <!-- Search results will appear here -->
+                    </div>
+                </div>
+                
+                <!-- Right panel for live commits -->
+                <div class="commits-panel">
+                    <h2><i class="fas fa-history"></i> Latest Commits</h2>
+                    <div id="commits" class="commits-list"></div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Add copyright at the bottom -->
+        <footer class="footer">
+            <p>&copy; 2024 Aditya Dixit. All rights reserved.</p>
+        </footer>
+    </div>
+
+    <script>
+        let allCommits = [];
+        let currentPackage = '';
+        let liveCommitsInterval;
+
+        function formatDescription(description) {
+            if (!description) return 'No detailed description available.';
+            return description
+                .replace(/\n/g, '<br>')
+                .replace(/\r/g, '')
+                .replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>')
+                .replace(/\*(.*?)\*/g, '<em>$1</em>');
+        }
+
+        // Initialize dropdowns and event handlers
+        $(document).ready(function() {
+            // Initialize repository dropdown
+            $('#repository').select2({
+                allowClear: true,
+                width: '100%',
+                placeholder: 'Select a repository...'
+            });
+
+            // Initialize version dropdowns
+            $('#releases, #tags').select2({
+                allowClear: true,
+                width: '100%'
+            });
+
+            // Handle version changes
+            $('#releases, #tags').on('change', handleVersionChange);
+
+            // Handle repository changes
+            $('#repository').on('change', function() {
+                const selectedRepo = $(this).val();
+                if (selectedRepo) {
+                    $('#releases, #tags').val('').trigger('change').prop('disabled', true);
+                    
+                    $.ajax({
+                        url: '/get_versions',
+                        method: 'POST',
+                        data: { 
+                            package_name: currentPackage,
+                            repository: selectedRepo
+                        },
+                        success: function(response) {
+                            if (response.error) {
+                                alert(response.error);
+                                return;
+                            }
+                            
+                            updateVersionDropdowns(response.releases, response.tags);
+                            $('#releases, #tags').prop('disabled', false);
+                        }
+                    });
+                }
+            });
+
+            // Handle commit search
+            $('#commit-search').on('input', function() {
+                displaySearchResults($(this).val());
+            });
+        });
+
+        function searchCVE() {
+            const cveId = document.getElementById('cve-input').value;
+            $('#security-animation').show();
+            $('#results').hide();
+            
+            $('.progress-bar').remove();
+            $('.progress-container').append('<div class="progress-bar"></div>');
+            
+            $.ajax({
+                url: '/search_cve',
+                method: 'POST',
+                data: { cve_id: cveId },
+                success: function(response) {
+                    $('#security-animation').hide();
+                    if (response.error) {
+                        alert(response.error);
+                        return;
+                    }
+                    
+                    $('#results').show();
+                    $('#package-name').text('Package: ' + response.package_name);
+                    $('#vulnerability-description').html(formatDescription(response.description));
+                    $('#vulnerability-summary').html(formatDescription(response.summary));
+                    
+                    currentPackage = response.package_name;
+                    allCommits = response.commits;
+                    
+                    // Populate releases dropdown
+                    const releasesSelect = $('#releases');
+                    releasesSelect.empty().append('<option value=""></option>');
+                    response.releases.forEach(release => {
+                        releasesSelect.append(`<option value="${release}">${release}</option>`);
+                    });
+                    
+                    // Populate tags dropdown
+                    const tagsSelect = $('#tags');
+                    tagsSelect.empty().append('<option value=""></option>');
+                    response.tags.forEach(tag => {
+                        tagsSelect.append(`<option value="${tag}">${tag}</option>`);
+                    });
+                    
+                    // Initialize Select2 for both dropdowns
+                    $('#releases, #tags').select2({
+                        allowClear: true,
+                        width: '100%',
+                        placeholder: 'Select a version...'
+                    });
+                    
+                    startLiveCommits();
+                }
+            });
+        }
+
+        function handleVersionChange() {
+            const selectedRelease = $('#releases').val();
+            const selectedTag = $('#tags').val();
+            
+            if (!currentPackage) {
+                alert('Please search for a CVE first');
+                return;
+            }
+            
+            if (selectedRelease || selectedTag) {
+                $('#commit-search').prop('disabled', false);
+                loadCommits(selectedRelease, selectedTag);
+            } else {
+                $('#commit-search').prop('disabled', true);
+                $('#search-results-container').empty();
+                $('#commits').empty();
+            }
+        }
+
+        // Add this in your document ready function
+        $(document).ready(function() {
+            // Initialize Select2 for version dropdowns
+            $('#releases, #tags').select2({
+                allowClear: true,
+                width: '100%',
+                placeholder: 'Select a version...'
+            });
+
+            // Handle version changes
+            $('#releases, #tags').on('change', handleVersionChange);
+
+            // Handle commit search
+            $('#commit-search').on('input', function() {
+                const searchText = $(this).val();
+                if (searchText) {
+                    displaySearchResults(searchText);
+                }
+            });
+        });
+
+        // Add this function that was missing
+        function loadCommits(release, tag) {
+            $('#search-results-container').html('<div class="loading-spinner"></div>');
+            $('#commits').empty();
+            
+            $.ajax({
+                url: '/get_commits',
+                method: 'POST',
+                data: { 
+                    release: release,
+                    tag: tag,
+                    package_name: currentPackage
+                },
+                success: function(response) {
+                    if (response.error) {
+                        alert(response.error);
+                        return;
+                    }
+                    allCommits = response.commits || [];
+                    displaySearchResults('');
+                    if (allCommits.length > 0) {
+                        startLiveCommits();
+                    } else {
+                        $('#search-results-container').html('<p>No commits found for this version</p>');
+                    }
+                },
+                error: function() {
+                    $('#search-results-container').html('<p>Error loading commits</p>');
+                }
+            });
+        }
+
+        // Update displaySearchResults function to handle string input
+        function displaySearchResults(searchText) {
+            const resultsContainer = $('#search-results-container');
+            resultsContainer.empty();
+    
+            let filteredCommits = allCommits;
+            if (searchText) {
+                filteredCommits = allCommits.filter(commit => 
+                    commit.message.toLowerCase().includes(searchText.toLowerCase()) ||
+                    commit.sha.toLowerCase().includes(searchText.toLowerCase()) ||
+                    commit.author.toLowerCase().includes(searchText.toLowerCase())
+                );
+            }
+    
+            if (filteredCommits.length === 0) {
+                resultsContainer.html('<p>No matching commits found</p>');
+                return;
+            }
+    
+            filteredCommits.forEach(commit => {
+                resultsContainer.append(`
+                    <div class="search-result-item">
+                        <div class="commit-header">
+                            <a href="${commit.html_url}" target="_blank" class="commit-sha" title="View commit on GitHub">
+                                ${commit.short_sha}
+                            </a>
+                            <span class="commit-author">by ${commit.author}</span>
+                            <span class="commit-date">${commit.date}</span>
+                        </div>
+                        <span class="commit-message">${commit.message}</span>
+                    </div>
+                `);
+            });
+        }
+
+        $('#commit-search').on('input', function() {
+            displaySearchResults($(this).val());
+        });
+
+        function startLiveCommits() {
+            if (liveCommitsInterval) {
+                clearInterval(liveCommitsInterval);
+            }
+
+            let index = 0;
+            const commitsDiv = $('#commits');
+            commitsDiv.empty();
+
+            function addNextCommit() {
+                if (index < allCommits.length) {
+                    const commit = allCommits[index];
+                    const commitElement = $(`
+                        <div class="commit">
+                            <div class="commit-header">
+                                <a href="${commit.html_url}" target="_blank" class="commit-sha" title="View commit on GitHub">
+                                    ${commit.short_sha}
+                                </a>
+                                <span class="commit-author">by ${commit.author}</span>
+                                <span class="commit-date">${commit.date}</span>
+                            </div>
+                            <span class="commit-message">${commit.message}</span>
+                        </div>
+                    `).hide();
+                    
+                    commitsDiv.prepend(commitElement);
+                    commitElement.slideDown(500);
+                    
+                    if (commitsDiv.children().length > 10) {
+                        commitsDiv.children().last().slideUp(500, function() {
+                            $(this).remove();
+                        });
+                    }
+                    
+                    index = (index + 1) % allCommits.length;
+                }
+            }
+
+            liveCommitsInterval = setInterval(addNextCommit, 3000);
+            addNextCommit();
+        }
+    </script>
+</body>
+</html>
